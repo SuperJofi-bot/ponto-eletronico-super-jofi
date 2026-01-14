@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { supabase, callEdgeFunction } from '../services/supabase';
+import { supabase } from '../services/supabase';
 import { User } from '../types';
 import { 
   Plus, 
@@ -64,23 +64,24 @@ const Funcionarios: React.FC = () => {
 
     try {
       /**
-       * Chamada para a Edge Function 'create-user'.
-       * O payload foi corrigido de 'email' para 'login' para coincidir com o que a função espera.
+       * Chamada direta via supabase.functions.invoke para a Edge Function 'create-user'.
+       * O payload utiliza 'login' como chave de email conforme esperado pela função.
        */
-      const { data, error: funcError } = await callEdgeFunction<any>('create-user', {
-        nome: newEmployee.nome,
-        login: newEmployee.login, // Chave corrigida
-        password: newEmployee.senha,
-        perfil: newEmployee.perfil,
-        ativo: newEmployee.ativo
+      const { data, error: funcError } = await supabase.functions.invoke('create-user', {
+        body: {
+          nome: newEmployee.nome,
+          login: newEmployee.login,
+          password: newEmployee.senha,
+          perfil: newEmployee.perfil,
+          ativo: newEmployee.ativo
+        }
       });
 
       if (funcError) {
-        // Se houver erro na função, lançamos a exceção para não criar um usuário "zumbi" apenas na tabela
-        throw new Error(funcError.message || 'Erro ao criar usuário no Authentication. Verifique se a Edge Function está implantada corretamente.');
+        throw new Error(funcError.message || 'Erro ao criar usuário no Authentication via Edge Function.');
       }
 
-      // Sucesso total (Auth + DB via Edge Function)
+      // Sucesso total
       setSuccess(true);
       setNewEmployee({ nome: '', login: '', senha: '', perfil: 'funcionario', ativo: true });
       fetchEmployees(); 
@@ -88,7 +89,7 @@ const Funcionarios: React.FC = () => {
       
     } catch (err: any) {
       console.error('Erro no processo de cadastro:', err);
-      setError('Falha crítica: ' + (err.message || 'Verifique se a Edge Function create-user está ativa e configurada.'));
+      setError('Falha crítica: ' + (err.message || 'Verifique se a Edge Function create-user está ativa e aceitando o payload corretamente.'));
     } finally {
       setIsSaving(false);
     }
@@ -120,10 +121,10 @@ const Funcionarios: React.FC = () => {
       </div>
 
       {error && (
-        <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-start gap-3 text-rose-800">
+        <div className="bg-rose-50 border border-rose-200 p-4 rounded-xl flex items-start gap-3 text-rose-800 animate-in fade-in slide-in-from-top-2">
           <AlertCircle className="shrink-0 mt-0.5" size={18} />
           <div className="text-xs">
-            <p className="font-bold mb-1">Erro no Cadastro</p>
+            <p className="font-bold mb-1 text-sm">Problema ao salvar</p>
             <p className="opacity-90">{error}</p>
           </div>
         </div>
