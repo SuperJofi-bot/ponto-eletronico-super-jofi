@@ -1,0 +1,7 @@
+{
+  "name": "Ponto Pro - Painel Administrativo",
+  "description": "Sistema de gestão de ponto eletrônico corporativo com controle de funcionários, banco de horas, solicitações e relatórios avançados.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
